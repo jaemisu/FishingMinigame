@@ -1,85 +1,108 @@
-#include <SFML\Graphics.hpp>
-#include <SFML\Window.hpp>
-#include <SFML\System.hpp>
-#include <SFML\Audio.hpp>
-#include <SFML\Network.hpp>
-#include <filesystem>
-#include <iostream>
+/*********************************************
+SFML Fishing Minigame Window
+cc: Sets up the game window, background, and click detection.
+*********************************************/
 
+#include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
+#include <SFML/Window.hpp>
+#include <functional>
+#include <iostream>
+#include <vector>
+#include <map>
+
+
+// CONSTANTS & GLOBALS
+const int WINDOW_WIDTH = 1200;
+const int WINDOW_HEIGHT = 800;
+
+// CLICKLABLE POSITIONS
+sf::IntRect playbuttonUI({ 380, 480 }, { 430, 130 });
+sf::IntRect exitbuttonUI({ 15, 15 }, { 100, 60 });
+
+// POSTION LISTS
+std::vector<sf::IntRect> xyMasterList = { playbuttonUI, exitbuttonUI };
+std::vector<sf::IntRect> xyAvailableList = { playbuttonUI, exitbuttonUI };
+
+// PNGS -> TEXTURES
+sf::Texture titleTexture("sprites/TitleScreen.png");
+sf::Texture backgroundTexture("sprites/BackgroundImage.png");
+
+// TEXTURES -> SPRITES
+sf::Sprite titleSprite(titleTexture);
+sf::Sprite backgroundSprite(backgroundTexture);
+
+// SPRITE LIST (for ui management)
+std::vector<sf::Sprite> allSprites = { backgroundSprite, titleSprite };
+
+// FUNCTIONS
+void playFunction()
+{
+    //put a function here that closes the title screen and spawns in the bulk of the game
+    //part of the function is also supposed to remove the "playbuttonUI" variable from the xyAvailableList
+}
+
+void exitFunction()
+{
+    exit(1);
+}
+
+// CLICK CHECKING FUNCTION
+int clickCheck(sf::Vector2i mousePos)
+{
+    std::size_t z = 0;
+    std::size_t x = 0;
+
+    for (std::size_t x = 0; x < xyAvailableList.size(); x++)
+    {
+        if (xyAvailableList[x].contains(mousePos))
+        {
+            for (std::size_t z = 0; z < xyMasterList.size(); z++)
+            {
+                if (xyAvailableList[x] == xyMasterList[z])
+                    return z;
+            }
+        }
+    }
+    return -1;
+}
+
+//MAIN GAME
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(1200, 800), "Best Fishing Game Ever"); //Opens the screen
+    // FUNCTION MAPPING
+    std::map<int, std::function<void()>> functionMap = { { 0, playFunction },{1, exitFunction} };
 
-    //Texture Loading
-    sf::Texture backgroundTexture;
-    backgroundTexture.loadFromFile("BackgroundImage.png");
+    // MAIN WINDOW
+    sf::RenderWindow window(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "Fishing Minigame");
 
-    sf::Texture bookMenu;
-    bookMenu.loadFromFile("Book menu.png");
-
-    sf::Texture titleScreen;
-    titleScreen.loadFromFile("TitleScreen.png");
-
-    sf::Texture playerIdle;
-    playerIdle.loadFromFile("PlayerIdle.png");
-
-    sf::Texture shopTexture;
-    shopTexture.loadFromFile("Shop.png");
-
-    sf::Texture fishButtonTexture;
-    fishButtonTexture.loadFromFile("fishingbutton.png");
-
-    //Sprite Creation
-    sf::Sprite backgroundSprite;
-    backgroundSprite.setTexture(backgroundTexture);
-
-    sf::Sprite titleSprite;
-    titleSprite.setTexture(titleScreen);
-
-    sf::Sprite playerIdleSprite;
-    playerIdleSprite.setTexture(playerIdle);
-
-    sf::Sprite shopSprite;
-    shopSprite.setTexture(shopTexture);
-
-    sf::Sprite fishingButton;
-    fishingButton.setTexture(fishButtonTexture);
-
-    window.clear();
-    window.draw(backgroundSprite);
-    window.draw(titleSprite);
-
-    while (window.isOpen()) 
+    while (window.isOpen())
     {
-        sf::Event event;
-        while (window.pollEvent(event)) 
+        while (const std::optional event = window.pollEvent())
         {
-
-            if (event.type == sf::Event::Closed)
-                window.close();
-                
-            else if (event.type == sf::Event::MouseButtonPressed)
+            if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>())
             {
-                if (event.mouseButton.button == sf::Mouse::Left)
+                if (mouseButtonPressed->button == sf::Mouse::Button::Left)
                 {
                     sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                    if (clickChecking(mousePos, clickAreaMenuExit))
+                    int y = clickCheck(mousePos);
+                    std::cout << y;
+                    if (y >= 0)
                     {
-                        exit(0);
-                    }
-                    if (clickChecking(mousePos, clickAreaMenuPlay))
-                    {
-                        window.clear();
-                        window.draw(backgroundSprite);
-                        window.draw(fishingButton);
-                        window.draw(shopSprite);
-                        window.draw(playerIdleSprite);
-                        continue;
+                        functionMap[y]();
                     }
                 }
             }
-        }       
+        }
+
+        window.clear();
+        for (const auto& lastSprite : allSprites) {
+            window.draw(lastSprite); // Draw remaining sprites
+        }
         window.display();
+
     }
+
+
     return 0;
 }
